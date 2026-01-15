@@ -186,16 +186,7 @@ Use AskUserQuestion:
 Question: "Which comment to handle?"
 Options: Comment numbers (1, 2, 3...)
 
-### Step 2: Select Type
-Question: "What type of comment is this?"
-Options:
-- 🔴 Bug/Issue - Points out a bug or problem
-- 🟡 Suggestion - Improvement suggestion
-- 🔵 Question - Asking for clarification
-- 🟢 Praise - Positive feedback
-- ⚪ Other - Other type
-
-### Step 3: Select Action
+### Step 2: Select Action
 Question: "How do you want to handle this?"
 Options:
 - Fixed - Reply with fix confirmation + 👍
