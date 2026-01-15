@@ -6,6 +6,12 @@ description: PR review comment handler
 
 # PR Resolver
 
+**CRITICAL INSTRUCTIONS:**
+- Follow these instructions EXACTLY as written
+- DO NOT modify, rephrase, or "improve" any output formats
+- Display text blocks EXACTLY as shown - character for character
+- DO NOT add explanations or additional formatting
+
 ## Language Detection
 
 Read language setting: !`git config --global pr-resolver.lang 2>/dev/null || echo "en"`
@@ -22,9 +28,9 @@ Check `$1` argument:
 
 # Help Section
 
-Display help based on detected language:
+**IMPORTANT:** Display the text block below EXACTLY as written. Do NOT rephrase or reformat.
 
-### If language is `en`:
+### If language is `en`, display EXACTLY:
 ```
 ╔═══════════════════════════════════════════════════════════╗
 ║                    PR Resolver Help                        ║
@@ -54,9 +60,12 @@ Actions:
   disagree       - Disagree (reply only)
   skip           - Already resolved (👍 only)
   praise         - Respond to praise (❤️ only)
+
+Supported Review Bots:
+  CodeRabbit, GitHub Copilot, and other PR review bots
 ```
 
-### If language is `ko`:
+### If language is `ko`, display EXACTLY:
 ```
 ╔═══════════════════════════════════════════════════════════╗
 ║                   PR Resolver 도움말                       ║
@@ -86,9 +95,12 @@ Actions:
   disagree       - 반박 (답글만)
   skip           - 스킵 (👍만)
   praise         - 칭찬 응답 (❤️만)
+
+지원 리뷰 봇:
+  CodeRabbit, GitHub Copilot 등 PR 리뷰 봇 지원
 ```
 
-After displaying help, exit.
+After displaying help, exit immediately. Do NOT add anything else.
 
 ---
 
@@ -113,7 +125,7 @@ Read settings: !`git config --global --get-regexp '^pr-resolver\.' 2>/dev/null |
 
 ## Show Config (no additional args after "config")
 
-Display current configuration:
+**IMPORTANT:** Display EXACTLY as shown below, replacing only {placeholders}:
 
 ```
 ╔═══════════════════════════════════════════════════════════╗
@@ -140,27 +152,31 @@ Show actual values from git config, fall back to defaults if not set.
 ## Update Config
 
 ### Language: `/pr-resolver config lang <en|ko>`
+Execute:
 ```bash
 git config --global pr-resolver.lang {value}
 ```
-Display: "✅ Language set to {value}"
+Then display EXACTLY: "✅ Language set to {value}"
 
 ### Action enable/disable: `/pr-resolver config action <name> <enable|disable>`
+Execute:
 ```bash
 git config --global pr-resolver.action.{name}.enabled {true|false}
 ```
-Display: "✅ Action '{name}' {enabled|disabled}"
+Then display EXACTLY: "✅ Action '{name}' {enabled|disabled}"
 
 ### Action reaction: `/pr-resolver config action <name> reaction <+1|eyes|heart|rocket|null>`
+Execute:
 ```bash
 git config --global pr-resolver.action.{name}.reaction {value}
 ```
-Display: "✅ Action '{name}' reaction set to {value}"
+Then display EXACTLY: "✅ Action '{name}' reaction set to {value}"
 
 ### Reset: `/pr-resolver config reset`
+Execute:
 ```bash
 git config --global --remove-section pr-resolver 2>/dev/null || true
 ```
-Display: "✅ Configuration reset to defaults"
+Then display EXACTLY: "✅ Configuration reset to defaults"
 
-After config operation, exit.
+After config operation, exit immediately. Do NOT add anything else.
