@@ -4,7 +4,7 @@
 
 | 항목 | 내용 |
 |------|------|
-| 산출물 | `commands/pr-resolver.md` |
+| 산출물 | `commands/pr-resolver.md` (라우터)<br>`commands/pr-resolver-en.md` (영어)<br>`commands/pr-resolver-ko.md` (한국어) |
 | 형식 | Claude Code Custom Command (Markdown) |
 | 의존성 | gh CLI, git |
 

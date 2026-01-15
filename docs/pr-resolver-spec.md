@@ -174,3 +174,16 @@
 ```yaml
 allowed-tools: Bash(gh:*), Bash(git:*)
 ```
+
+---
+
+## 12. 다국어 지원
+
+| 항목 | 내용 |
+|------|------|
+| 지원 언어 | 영어 (en), 한국어 (ko) |
+| 기본값 | en |
+| 설정 방법 | `/pr-resolver config lang ko` |
+| 적용 범위 | Help, Config UI, 에러 메시지 |
+
+언어 설정은 `git config --global pr-resolver.lang`에 저장됩니다.
