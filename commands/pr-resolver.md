@@ -196,27 +196,76 @@ Options:
 - Skip - Mark as resolved (👍 only)
 - Praise response - Thank reviewer (❤️ only)
 
-## Reply Generation
+## Process Comment
 
-### If action is "fixed" or "will_fix_later":
+### Step 1: Show Full Comment
 
-1. Analyze original comment content
-2. Generate appropriate reply based on action
-3. Get commit hash: !`git rev-parse --short HEAD`
-4. Ask: "Is this the correct commit? {hash}"
-5. Detect comment language → Match reply language
-6. Show suggested reply
-7. Ask: [Send] [Edit] [Cancel]
+Display the full reviewer comment:
+```
+┌─────────────────────────────────────────────────────────────┐
+│  📝 리뷰어 코멘트                                            │
+│  ─────────────────────────────────────────────────────────  │
+│  파일: {path}:{line}                                        │
+│  내용: {full comment body}                                  │
+└─────────────────────────────────────────────────────────────┘
+```
 
-### If action is "explain" or "disagree":
+### Step 2: Detect Language
 
-1. Ask: "Enter your reply:"
+Detect comment language → Use same language for code suggestions and replies
+
+### Step 3: Code Fix (if action is "fixed")
+
+1. Analyze comment and related code
+2. Generate suggested code fix
+3. Display:
+```
+┌─────────────────────────────────────────────────────────────┐
+│  💡 제안 수정 코드                                           │
+│  ─────────────────────────────────────────────────────────  │
+│  - {original code}                                          │
+│  + {suggested fix}                                          │
+└─────────────────────────────────────────────────────────────┘
+```
+4. Ask user: [적용] [수정] [의견 추가] [건너뛰기]
+   - 적용: Apply suggested code as-is
+   - 수정: Let user modify the suggestion before applying
+   - 의견 추가: User provides additional context → Regenerate suggestion
+   - 건너뛰기: Skip this comment, move to next
+
+5. If applied/modified → Commit the change
+   - Get commit hash: !`git rev-parse --short HEAD`
+   - Ask: "이 커밋이 맞나요? {hash}" [예] [다른 커밋 선택]
+
+### Step 4: Generate Reply
+
+#### If action is "fixed" or "will_fix_later":
+1. Generate reply with commit reference (if applicable)
+2. Match detected language
+
+#### If action is "explain" or "disagree":
+1. Ask user: "답글을 입력하세요:"
 2. Get user input
-3. Confirm content
 
-### If action is "skip" or "praise":
-
+#### If action is "skip" or "praise":
 Skip reply generation, proceed to reaction only
+
+### Step 5: Confirm Reply
+
+Display suggested reply:
+```
+┌─────────────────────────────────────────────────────────────┐
+│  💬 제안 답글                                                │
+│  ─────────────────────────────────────────────────────────  │
+│  {suggested reply content}                                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Ask user: [전송] [수정] [의견 추가] [취소]
+- 전송: Send reply as-is
+- 수정: Let user modify the reply before sending
+- 의견 추가: User provides additional context → Regenerate reply
+- 취소: Cancel and move to next comment
 
 ## Send
 
@@ -238,9 +287,9 @@ Reaction mapping:
 
 ### Display result:
 ```
-✅ Reply sent successfully!
-   Comment ID: {id}
-   Reaction: {emoji}
+✅ 전송 완료!
+   코멘트 ID: {id}
+   리액션: {emoji}
 ```
 
 ## Repeat

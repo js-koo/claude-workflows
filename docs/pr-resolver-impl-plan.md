@@ -16,11 +16,13 @@
 claude-code-skills/
 ├── README.md                      # 설치 가이드
 ├── LICENSE
+├── install.sh                     # 설치 스크립트
+├── uninstall.sh                   # 삭제 스크립트
 ├── docs/
-│   ├── pr-resolver-spec.md        # 요구사항 정의서 ✅
+│   ├── pr-resolver-spec.md        # 요구사항 정의서
 │   └── pr-resolver-impl-plan.md   # 구현 계획서 (현재 문서)
 └── commands/
-    └── pr-resolver.md             # 구현 대상
+    └── pr-resolver.md             # 메인 스킬 파일
 ```
 
 ---
@@ -34,203 +36,156 @@ claude-code-skills/
 
 # 제목
 
-## 섹션 1: 환경 확인
-## 섹션 2: PR 감지
-## 섹션 3: 코멘트 조회
-## 섹션 4: 사용자 상호작용
-## 섹션 5: 답글 생성
-## 섹션 6: 전송
-## 섹션 7: 반복
-## 섹션 8: 에러 처리
+## 섹션 1: Default Configuration
+## 섹션 2: Command Routing
+## 섹션 3: Help Section
+## 섹션 4: Config Section
+## 섹션 5: Main Flow
+  - Environment Check
+  - PR Detection
+  - Comment Retrieval
+  - User Selection
+  - Process Comment
+  - Send
+  - Repeat
+## 섹션 6: Error Handling
 ```
 
 ---
 
-## 4. 섹션별 구현 상세
+## 4. 주요 플로우 상세
 
 ### 4.1 Frontmatter
 
 ```yaml
 ---
 allowed-tools: Bash(gh:*), Bash(git:*)
-argument-hint: [PR번호]
-description: PR 리뷰 코멘트 확인 및 답글 처리
+argument-hint: [help|config|PR number]
+description: PR review comment handler
 ---
 ```
 
-### 4.2 환경 확인
+### 4.2 User Selection
 
-```markdown
-## 환경 확인
+```
+Step 1: 코멘트 선택
+  └─ "Which comment to handle?" → 번호 선택
 
-1. git repo 확인: !`git rev-parse --git-dir 2>/dev/null`
-2. gh 인증 확인: !`gh auth status 2>&1`
-3. remote 정보: !`git remote -v`
-
-실패 시 에러 메시지 출력 후 종료.
+Step 2: 액션 선택
+  └─ Fixed / Will fix later / Explain / Disagree / Skip / Praise response
 ```
 
-### 4.3 PR 감지
+### 4.3 Process Comment (Fixed 액션)
 
-```markdown
-## PR 감지
+```
+Step 1: 리뷰어 코멘트 전체 표시
+  └─ 파일, 라인, 내용 전체
 
-인자: $1
+Step 2: 언어 감지
+  └─ 코멘트 언어 → 코드 제안/답글 언어 맞춤
 
-1. $1 있으면 → PR 번호로 사용
-2. $1 없으면 → !`gh pr view --json number -q '.number'`
-3. 실패 시 → 사용자에게 PR 번호 입력 요청
+Step 3: 코드 수정 제안
+  └─ AI가 수정 코드 제안
+  └─ [적용] [수정] [의견 추가] [건너뛰기]
+      • 적용: 제안 코드 그대로 적용
+      • 수정: 사용자가 수정 후 적용
+      • 의견 추가: 추가 컨텍스트 → 재생성
+      • 건너뛰기: 다음 코멘트로
+
+Step 4: 커밋
+  └─ 코드 수정 적용 시 자동 커밋
+  └─ "이 커밋이 맞나요? {hash}" 확인
+
+Step 5: 답글 생성
+  └─ AI가 답글 제안 (커밋 해시 포함)
+
+Step 6: 답글 확인
+  └─ [전송] [수정] [의견 추가] [취소]
+      • 전송: 답글 그대로 전송
+      • 수정: 사용자가 수정 후 전송
+      • 의견 추가: 추가 컨텍스트 → 재생성
+      • 취소: 다음 코멘트로
 ```
 
-### 4.4 코멘트 조회
+### 4.4 Config Section
 
-```markdown
-## 코멘트 조회
+설정은 `git config --global` 사용:
 
-API: gh api repos/{owner}/{repo}/pulls/{pr}/comments
+```bash
+# 언어 설정
+git config --global pr-resolver.lang ko
 
-출력 형식:
-┌────┬──────────────────────┬─────────────────────────┐
-│ #  │ 파일                  │ 내용 (50자)             │
-├────┼──────────────────────┼─────────────────────────┤
-│ 1  │ Repository.kt:64     │ SQL 인젝션 위험...      │
-│ 2  │ Service.kt:176       │ check() 검증 제거...    │
-└────┴──────────────────────┴─────────────────────────┘
+# 액션 활성화/비활성화
+git config --global pr-resolver.action.disagree.enabled false
+
+# 리액션 변경
+git config --global pr-resolver.action.fixed.reaction rocket
+
+# 설정 초기화
+git config --global --remove-section pr-resolver
 ```
 
-### 4.5 사용자 상호작용
+---
 
-```markdown
-## 사용자 선택
+## 5. 액션별 동작
 
-### Step 1: 코멘트 선택
-"어떤 코멘트를 처리할까요?" → 번호 입력
+| 액션 | 코드수정 | 답글 | 리액션 |
+|------|----------|------|--------|
+| Fixed | ✅ AI 제안 | ✅ AI 제안 | 👍 (+1) |
+| Will fix later | ❌ | ✅ AI 제안 | 👀 (eyes) |
+| Explain | ❌ | ✅ 사용자 입력 | ❌ |
+| Disagree | ❌ | ✅ 사용자 입력 | ❌ |
+| Skip | ❌ | ❌ | 👍 (+1) |
+| Praise response | ❌ | ❌ | ❤️ (heart) |
 
-### Step 2: 유형 선택
-┌─────────────────────────────────────┐
-│ 🔴 버그/이슈   │ 🟡 제안          │
-│ 🔵 질문       │ 🟢 칭찬/승인      │
-│ ⚪ 기타       │                   │
-└─────────────────────────────────────┘
+---
 
-### Step 3: 행동 선택
-┌─────────────────────────────────────┐
-│ 1. 수정 완료   → 답글 + 👍         │
-│ 2. 다음에 반영 → 답글 + 👀         │
-│ 3. 설명       → 답글만             │
-│ 4. 반박       → 답글만             │
-│ 5. 스킵       → 👍만               │
-│ 6. 칭찬 응답  → ❤️만               │
-└─────────────────────────────────────┘
-```
+## 6. GitHub API 사용
 
-### 4.6 답글 생성
+```bash
+# 레포 정보
+gh repo view --json owner,name -q '"\(.owner.login)/\(.name)"'
 
-```markdown
-## 답글 생성
+# 코멘트 조회
+gh api repos/{owner}/{repo}/pulls/{pr}/comments \
+  --jq '.[] | {id, path, body, in_reply_to_id}'
 
-### 수정 완료 / 다음에 반영
-1. 코멘트 내용 분석
-2. 행동에 맞는 답글 제안
-3. 커밋 해시: !`git rev-parse HEAD --short`
-4. "이 커밋 맞나요? {hash}" 확인
-5. 언어: 코멘트 언어 감지 (한/영)
-6. 사용자 확인/수정
-
-### 설명 / 반박
-1. 사용자에게 직접 입력 요청
-2. 입력 내용 확인
-```
-
-### 4.7 전송
-
-```markdown
-## 전송
-
-### 답글 전송
+# 답글 전송
 gh api repos/{owner}/{repo}/pulls/{pr}/comments/{id}/replies \
-  -f body="{답글 내용}"
+  -f body="{reply}"
 
-### 리액션 추가
+# 리액션 추가
 gh api repos/{owner}/{repo}/pulls/{pr}/comments/{id}/reactions \
   -f content="{+1|eyes|heart}"
-
-### 리액션 매핑
-| 행동 | content |
-|------|---------|
-| 수정 완료 | +1 |
-| 다음에 반영 | eyes |
-| 스킵 | +1 |
-| 칭찬 응답 | heart |
-```
-
-### 4.8 반복
-
-```markdown
-## 반복
-
-전송 완료 후:
-"다른 코멘트도 처리할까요?" [예/아니오]
-
-예 → 코멘트 목록으로 돌아가기
-아니오 → 종료
-```
-
-### 4.9 에러 처리
-
-```markdown
-## 에러 처리
-
-| 상황 | 메시지 |
-|------|--------|
-| git repo 아님 | "❌ git 저장소에서 실행해주세요." |
-| gh 미인증 | "❌ gh auth login을 먼저 실행해주세요." |
-| PR 없음 | "❌ PR을 찾을 수 없습니다. PR 번호를 입력해주세요." |
-| 코멘트 없음 | "✅ 처리할 코멘트가 없습니다." |
-| API 실패 | "❌ GitHub API 오류: {에러 메시지}" |
 ```
 
 ---
 
-## 5. 구현 순서
-
-| # | 작업 | 설명 |
-|---|------|------|
-| 1 | repo 초기화 | clone, 폴더 구조 생성 |
-| 2 | frontmatter 작성 | 메타데이터 정의 |
-| 3 | 환경 확인 섹션 | git, gh 체크 로직 |
-| 4 | PR 감지 섹션 | 자동/수동 PR 번호 획득 |
-| 5 | 코멘트 조회 섹션 | API 호출 및 포맷팅 |
-| 6 | 사용자 선택 섹션 | 코멘트/유형/행동 선택 |
-| 7 | 답글 생성 섹션 | AI 제안 + 확인 |
-| 8 | 전송 섹션 | 답글 + 리액션 API |
-| 9 | 반복 섹션 | 계속 여부 확인 |
-| 10 | 에러 처리 섹션 | 예외 상황 대응 |
-| 11 | 테스트 | 실제 PR로 동작 확인 |
-| 12 | README 작성 | 설치/사용법 문서화 |
-| 13 | push | GitHub 업로드 |
-
----
-
-## 6. 테스트 계획
+## 7. 테스트 계획
 
 | # | 시나리오 | 예상 결과 |
 |---|----------|----------|
 | 1 | `/pr-resolver` (PR 있는 브랜치) | PR 자동 감지 |
 | 2 | `/pr-resolver 2874` | 지정 PR 사용 |
-| 3 | 코멘트 없는 PR | "처리할 코멘트 없음" |
-| 4 | 수정 완료 선택 | 답글 + 👍 전송 |
-| 5 | 스킵 선택 | 👍만 전송 |
-| 6 | 다중 코멘트 처리 | 반복 동작 확인 |
+| 3 | `/pr-resolver help` | 도움말 표시 |
+| 4 | `/pr-resolver config` | 설정 표시 |
+| 5 | 코멘트 없는 PR | "처리할 코멘트 없음" |
+| 6 | Fixed 선택 | 코드 수정 → 커밋 → 답글 + 👍 |
+| 7 | Skip 선택 | 👍만 전송 |
+| 8 | 의견 추가 | 재생성 후 다시 선택 |
+| 9 | 다중 코멘트 처리 | 반복 동작 확인 |
 
 ---
 
-## 7. 일정
+## 8. 설치 방법
 
-| # | 작업 | 예상 시간 |
-|---|------|----------|
-| 1 | pr-resolver.md 작성 | 30분 |
-| 2 | 테스트 | 15분 |
-| 3 | README 작성 | 10분 |
-| 4 | push | 5분 |
-| **합계** | | **1시간** |
+```bash
+# 설치
+curl -fsSL https://raw.githubusercontent.com/js-koo/claude-code-skills/main/install.sh | bash
+
+# 삭제
+~/.claude-code-skills/uninstall.sh
+
+# 업데이트
+cd ~/.claude-code-skills && git pull
+```
