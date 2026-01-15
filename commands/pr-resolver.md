@@ -1,6 +1,6 @@
 ---
 allowed-tools: Bash(gh:*), Bash(git:*)
-argument-hint: [help|PR number]
+argument-hint: [help|config|PR number]
 description: PR review comment handler
 ---
 
@@ -10,9 +10,10 @@ Handle PR review comments with replies and reactions.
 
 ## Default Configuration
 
-Use these defaults throughout the flow:
+Use these defaults (can be overridden via config):
 
 ```
+lang: en (en|ko)
 Actions:
   fixed:          reply + 👍 (+1)
   will_fix_later: reply + 👀 (eyes)
@@ -27,6 +28,7 @@ Actions:
 Check `$1` argument:
 
 - If `$1` = "help" → Go to **Help Section**
+- If `$1` = "config" → Go to **Config Section**
 - Otherwise → Go to **Main Flow** (treat $1 as PR number if numeric)
 
 ---
@@ -43,10 +45,19 @@ Display help information:
 Usage:
   /pr-resolver [PR number]    - Handle PR review comments
   /pr-resolver help           - Show this help
+  /pr-resolver config         - Show/update configuration
+
+Config Commands:
+  /pr-resolver config                     - Show current settings
+  /pr-resolver config lang <en|ko>        - Set language
+  /pr-resolver config action <name> <enable|disable>
+  /pr-resolver config action <name> reaction <+1|eyes|heart|rocket|null>
+  /pr-resolver config reset               - Reset to defaults
 
 Examples:
   /pr-resolver                - Auto-detect PR and handle comments
   /pr-resolver 2874           - Handle comments for PR #2874
+  /pr-resolver config lang ko - Switch to Korean
 
 Actions:
   fixed          - Code fixed (reply + 👍)
@@ -58,6 +69,70 @@ Actions:
 ```
 
 After displaying help, exit.
+
+---
+
+# Config Section
+
+Configuration is stored using git config (global).
+
+## Load Current Config
+
+Read settings: !`git config --global --get-regexp '^pr-resolver\.' 2>/dev/null || echo ""`
+
+## Show Config (no additional args after "config")
+
+Display current configuration:
+
+```
+╔═══════════════════════════════════════════════════════════╗
+║                 PR Resolver Configuration                  ║
+╚═══════════════════════════════════════════════════════════╝
+
+Language: {lang or "en (default)"}
+
+Actions:
+  ┌─────────────────┬─────────┬──────────────┐
+  │ Action          │ Enabled │ Reaction     │
+  ├─────────────────┼─────────┼──────────────┤
+  │ fixed           │ ✓       │ 👍 (+1)      │
+  │ will_fix_later  │ ✓       │ 👀 (eyes)    │
+  │ explain         │ ✓       │ -            │
+  │ disagree        │ ✓       │ -            │
+  │ skip            │ ✓       │ 👍 (+1)      │
+  │ praise          │ ✓       │ ❤️ (heart)   │
+  └─────────────────┴─────────┴──────────────┘
+```
+
+Show actual values from git config, fall back to defaults if not set.
+
+## Update Config
+
+### Language: `/pr-resolver config lang <en|ko>`
+```bash
+git config --global pr-resolver.lang {value}
+```
+Display: "✅ Language set to {value}"
+
+### Action enable/disable: `/pr-resolver config action <name> <enable|disable>`
+```bash
+git config --global pr-resolver.action.{name}.enabled {true|false}
+```
+Display: "✅ Action '{name}' {enabled|disabled}"
+
+### Action reaction: `/pr-resolver config action <name> reaction <+1|eyes|heart|rocket|null>`
+```bash
+git config --global pr-resolver.action.{name}.reaction {value}
+```
+Display: "✅ Action '{name}' reaction set to {value}"
+
+### Reset: `/pr-resolver config reset`
+```bash
+git config --global --remove-section pr-resolver 2>/dev/null || true
+```
+Display: "✅ Configuration reset to defaults"
+
+After config operation, exit.
 
 ---
 
