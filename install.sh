@@ -21,17 +21,17 @@ echo -e "${NC}"
 
 # Check git
 if ! command -v git &> /dev/null; then
-    echo -e "${RED}❌ git이 설치되어 있지 않습니다.${NC}"
+    echo -e "${RED}❌ git is not installed.${NC}"
     exit 1
 fi
 
 # Clone or update
 if [ -d "$INSTALL_DIR" ]; then
-    echo -e "${YELLOW}📦 기존 설치 발견. 업데이트 중...${NC}"
+    echo -e "${YELLOW}📦 Existing installation found. Updating...${NC}"
     cd "$INSTALL_DIR"
     git pull origin main
 else
-    echo -e "${GREEN}📥 다운로드 중...${NC}"
+    echo -e "${GREEN}📥 Downloading...${NC}"
     git clone "$REPO_URL" "$INSTALL_DIR"
 fi
 
@@ -39,7 +39,7 @@ fi
 mkdir -p "$COMMANDS_DIR"
 
 # Create symlinks
-echo -e "${GREEN}🔗 심링크 생성 중...${NC}"
+echo -e "${GREEN}🔗 Creating symlinks...${NC}"
 for cmd in "$INSTALL_DIR/commands"/*.md; do
     filename=$(basename "$cmd")
     target="$COMMANDS_DIR/$filename"
@@ -54,11 +54,11 @@ done
 
 echo ""
 echo -e "${GREEN}╔═══════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║        ✅ 설치 완료!                   ║${NC}"
+echo -e "${GREEN}║     ✅ Installation complete!          ║${NC}"
 echo -e "${GREEN}╚═══════════════════════════════════════╝${NC}"
 echo ""
-echo -e "사용 가능한 명령어:"
-echo -e "  ${BLUE}/pr-resolver${NC} - PR 리뷰 코멘트 처리"
+echo -e "Available commands:"
+echo -e "  ${BLUE}/pr-resolver${NC} - Handle PR review comments"
 echo ""
-echo -e "${YELLOW}⚠️  Claude Code를 재시작하세요.${NC}"
+echo -e "${YELLOW}⚠️  Please restart Claude Code.${NC}"
 echo ""
